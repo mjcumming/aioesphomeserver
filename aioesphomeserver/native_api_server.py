@@ -1,11 +1,25 @@
+"""
+This module defines the NativeApiServer class, which handles API requests and manages
+client connections. It serves as a server entity that listens for and responds to
+requests, including those related to entity state changes, device information, and
+subscription management.
+
+Classes:
+    - NativeApiServer: A class that represents a server handling API requests and managing client connections.
+    - NativeApiConnection: A helper class that manages individual client connections to the server.
+
+Functions:
+    - _varuint_to_bytes(value): Converts a varuint (variable-length unsigned integer) to bytes.
+"""
+
 from __future__ import annotations
 
 import asyncio
-import socket
 import logging
+from aiohttp import web
 
+from .basic_entity import BasicEntity
 from . import (  # type: ignore
-    BasicEntity,
     ConnectRequest,
     ConnectResponse,
     DeviceInfoRequest,
@@ -28,9 +42,10 @@ from . import (  # type: ignore
     SubscribeStatesRequest,
 )
 
+# Create a reverse mapping for message types
 PROTO_TO_MESSAGE_TYPE = {v: k for k, v in MESSAGE_TYPE_TO_PROTO.items()}
 
-def _varuint_to_bytes(value: _int) -> bytes:
+def _varuint_to_bytes(value: int) -> bytes:
     """Convert a varuint to bytes."""
     if value <= 0x7F:
         return bytes((value,))
@@ -46,18 +61,30 @@ def _varuint_to_bytes(value: _int) -> bytes:
     return bytes(result)
 
 class NativeApiConnection:
-    def __init__(self, server, reader, writer):
+    """Handles a single client connection to the NativeApiServer."""
+
+    def __init__(self, server: NativeApiServer, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        """
+        Initialize a NativeApiConnection.
+
+        Args:
+            server (NativeApiServer): The server managing this connection.
+            reader (asyncio.StreamReader): The stream reader for incoming data.
+            writer (asyncio.StreamWriter): The stream writer for outgoing data.
+        """
         self.server = server
         self.reader = reader
         self.writer = writer
         self.subscribe_to_logs = False
         self.subscribe_to_states = False
 
-    async def start(self):
+    async def start(self) -> None:
+        """Start handling messages from the client."""
         while True:
             await self.handle_next_message()
 
-    async def handle_next_message(self):
+    async def handle_next_message(self) -> None:
+        """Read and process the next message from the client."""
         msg = await self.read_next_message()
 
         if msg is None:
@@ -65,36 +92,40 @@ class NativeApiConnection:
 
         await self.server.log(f"{type(msg)}: {msg}")
 
-        if type(msg) == HelloRequest:
+        if isinstance(msg, HelloRequest):
             await self.handle_hello(msg)
-        elif type(msg) == ConnectRequest:
+        elif isinstance(msg, ConnectRequest):
             await self.handle_connect(msg)
-        elif type(msg) == DisconnectRequest:
+        elif isinstance(msg, DisconnectRequest):
             await self.handle_disconnect(msg)
-        elif type(msg) == SubscribeLogsRequest:
+        elif isinstance(msg, SubscribeLogsRequest):
             await self.handle_subscribe_logs(msg)
-        elif type(msg) == PingRequest:
+        elif isinstance(msg, PingRequest):
             await self.handle_ping(msg)
-        elif type(msg) == SubscribeStatesRequest:
+        elif isinstance(msg, SubscribeStatesRequest):
             await self.handle_subscribe_states(msg)
         else:
             await self.server.handle_client_request(self, msg)
 
-    async def handle_hello(self, msg):
+    async def handle_hello(self, msg: HelloRequest) -> None:
+        """Handle a HelloRequest message."""
         resp = HelloResponse(api_version_major=1, api_version_minor=10)
         await self.write_message(resp)
 
-    async def handle_connect(self, msg):
+    async def handle_connect(self, msg: ConnectRequest) -> None:
+        """Handle a ConnectRequest message."""
         resp = ConnectResponse()
         await self.write_message(resp)
 
-    async def handle_disconnect(self, msg):
+    async def handle_disconnect(self, msg: DisconnectRequest) -> None:
+        """Handle a DisconnectRequest message."""
         resp = DisconnectResponse()
         await self.write_message(resp)
         self.writer.close()
         await self.writer.wait_closed()
 
-    async def handle_subscribe_logs(self, msg):
+    async def handle_subscribe_logs(self, msg: SubscribeLogsRequest) -> None:
+        """Handle a SubscribeLogsRequest message."""
         self.subscribe_to_logs = True
 
         resp = SubscribeLogsResponse()
@@ -103,22 +134,31 @@ class NativeApiConnection:
 
         await self.write_message(resp)
 
-    async def handle_subscribe_states(self, msg):
+    async def handle_subscribe_states(self, msg: SubscribeStatesRequest) -> None:
+        """Handle a SubscribeStatesRequest message."""
         self.subscribe_to_states = True
         await self.server.log("Subscribed to states")
         await self.server.send_all_states(self)
 
-    async def handle_ping(self, msg):
+    async def handle_ping(self, msg: PingRequest) -> None:
+        """Handle a PingRequest message."""
         resp = PingResponse()
         await self.write_message(resp)
 
-    async def log(self, message):
+    async def log(self, message: str) -> None:
+        """
+        Send a log message to the client.
+
+        Args:
+            message (str): The log message to send.
+        """
         resp = SubscribeLogsResponse()
         resp.message = str.encode(message)
 
         await self.write_message(resp)
 
     async def read_next_message(self):
+        """Read the next message from the client."""
         preamble = await self._read_varuint()
         length = await self._read_varuint()
         message_type = await self._read_varuint()
@@ -134,15 +174,20 @@ class NativeApiConnection:
 
         return msg
 
-    async def write_message(self, msg):
-        if msg == None:
+    async def write_message(self, msg) -> None:
+        """
+        Write a message to the client.
+
+        Args:
+            msg: The message to write.
+        """
+        if msg is None:
             return
 
-        out: list[bytes] = []
-        type_: int = PROTO_TO_MESSAGE_TYPE[type(msg)]
+        out = []
+        type_ = PROTO_TO_MESSAGE_TYPE[type(msg)]
         data = msg.SerializeToString()
 
-        out: list[bytes] = []
         out.append(b"\0")
         out.append(_varuint_to_bytes(len(data)))
         out.append(_varuint_to_bytes(type_))
@@ -151,7 +196,8 @@ class NativeApiConnection:
         self.writer.write(b"".join(out))
         await self.writer.drain()
 
-    async def _read_varuint(self):
+    async def _read_varuint(self) -> int:
+        """Read a variable-length unsigned integer from the client."""
         result = 0
         bitpos = 0
         while not self.reader.at_eof():
@@ -167,12 +213,27 @@ class NativeApiConnection:
         return -1
 
 class NativeApiServer(BasicEntity):
+    """
+    Represents a server that handles API requests and manages client connections.
+    """
+
+    DOMAIN = "server"
+
     def __init__(self, *args, port=6053, **kwargs):
+        """
+        Initialize a NativeApiServer instance.
+
+        Args:
+            port (int): The port on which the server listens. Defaults to 6053.
+        """
         super().__init__(*args, **kwargs)
         self.port = port
         self._clients = set()
 
-    async def run(self):
+    async def run(self) -> None:
+        """
+        Start the server and begin accepting connections.
+        """
         server = await asyncio.start_server(self.handle_client, '0.0.0.0', self.port)
         async with server:
             await self.device.log(2, "api", f"starting on port {self.port}!")
@@ -181,50 +242,95 @@ class NativeApiServer(BasicEntity):
             while True:
                 await asyncio.sleep(3600)
 
-    async def log(self, message):
+    async def log(self, message: str) -> None:
+        """
+        Log a message to all connected clients that are subscribed to logs.
+
+        Args:
+            message (str): The message to log.
+        """
         for client in self._clients:
             if client.subscribe_to_logs:
                 await client.log(message)
 
-    async def handle_client(self, reader, writer):
+    async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+        """
+        Handle a new client connection.
+
+        Args:
+            reader (asyncio.StreamReader): The stream reader for incoming data.
+            writer (asyncio.StreamWriter): The stream writer for outgoing data.
+        """
         connection = NativeApiConnection(self, reader, writer)
         self._clients.add(connection)
         task = asyncio.create_task(connection.start())
-        task.add_done_callback(self._clients.discard)
+        task.add_done_callback(lambda t: self._clients.discard(connection))
 
-    async def handle_client_request(self, client, message):
-        if type(message) == SubscribeHomeassistantServicesRequest:
+    async def handle_client_request(self, client: NativeApiConnection, message) -> None:
+        """
+        Handle a request from a client.
+
+        Args:
+            client (NativeApiConnection): The client making the request.
+            message: The message received from the client.
+        """
+        if isinstance(message, SubscribeHomeassistantServicesRequest):
             pass
-        elif type(message) == SubscribeHomeAssistantStatesRequest:
+        elif isinstance(message, SubscribeHomeAssistantStatesRequest):
             pass
-        elif type(message) == ListEntitiesRequest:
+        elif isinstance(message, ListEntitiesRequest):
             await self.handle_list_entities(client, message)
-        elif type(message) == DeviceInfoRequest:
+        elif isinstance(message, DeviceInfoRequest):
             await self.handle_device_info(client)
         else:
             await self.device.publish(self, 'client_request', message)
 
-    async def handle_list_entities(self, client, message):
+    async def handle_list_entities(self, client: NativeApiConnection, message: ListEntitiesRequest) -> None:
+        """
+        Handle a ListEntitiesRequest message.
+
+        Args:
+            client (NativeApiConnection): The client making the request.
+            message (ListEntitiesRequest): The message received from the client.
+        """
         for entity in self.device.entities:
             msg = await entity.build_list_entities_response()
-            if msg != None:
+            if msg is not None:
                 await client.write_message(msg)
 
         done_msg = ListEntitiesDoneResponse()
         await client.write_message(done_msg)
 
-    async def handle_device_info(self, client):
+    async def handle_device_info(self, client: NativeApiConnection) -> None:
+        """
+        Handle a DeviceInfoRequest message.
+
+        Args:
+            client (NativeApiConnection): The client making the request.
+        """
         msg = await self.device.build_device_info_response()
         await client.write_message(msg)
 
-    async def send_all_states(self, client):
+    async def send_all_states(self, client: NativeApiConnection) -> None:
+        """
+        Send all entity states to the client.
+
+        Args:
+            client (NativeApiConnection): The client to receive the states.
+        """
         for entity in self.device.entities:
             msg = await entity.build_state_response()
-            if msg == None:
-                next
-            await client.write_message(msg)
+            if msg is not None:
+                await client.write_message(msg)
 
-    async def handle(self, key, message):
+    async def handle(self, key: str, message) -> None:
+        """
+        Handle internal messages related to state changes or logs.
+
+        Args:
+            key (str): The key indicating the type of message.
+            message: The message data.
+        """
         if key == 'state_change':
             for client in self._clients:
                 if client.subscribe_to_states:
@@ -232,10 +338,50 @@ class NativeApiServer(BasicEntity):
 
         if key == 'log':
             msg = SubscribeLogsResponse(
-                level = message[0],
-                message = str.encode(message[1])
+                level=message[0],
+                message=str.encode(message[1])
             )
 
             for client in self._clients:
                 if client.subscribe_to_logs:
-                    await client.write_message(message)
+                    await client.write_message(msg)
+
+    async def build_list_entities_response(self):
+        """
+        Build the response for listing entities. This method should be overridden by subclasses.
+        """
+        return None
+
+    async def build_state_response(self):
+        """
+        Build the state response for this entity. This method should be overridden by subclasses.
+        """
+        return None
+
+    async def state_json(self) -> str:
+        """
+        Generate a JSON representation of the entity's state. This method should be overridden by subclasses.
+        """
+        return "{}"
+
+    async def add_routes(self, router) -> None:
+        """
+        Add routes for this entity to a router. This method should be overridden by subclasses.
+
+        Args:
+            router: The router to which routes should be added.
+        """
+        router.add_route("GET", f"/server/{self.object_id}", self.route_get_state)
+
+    async def route_get_state(self, request) -> web.Response:
+        """
+        Handle GET requests to retrieve the server's state.
+
+        Args:
+            request: The incoming HTTP request.
+
+        Returns:
+            web.Response: The response containing the server's state in JSON format.
+        """
+        data = await self.state_json()
+        return web.Response(text=data)

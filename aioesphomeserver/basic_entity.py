@@ -1,23 +1,62 @@
+"""
+This module defines the BasicEntity class, which represents a generic entity
+in the system. The BasicEntity class provides basic functionality for managing
+entity states, IDs, and device associations. It is intended to be subclassed
+by more specific entity types.
+
+Classes:
+    - BasicEntity: A base class for entities that provides methods for managing
+      entity state, IDs, and interactions with devices.
+
+The class includes properties for generating object and unique IDs, as well as
+methods for handling entity-specific logic like state changes, message handling,
+and entity registration within a system.
+"""
+
 from __future__ import annotations
 
 import re
 import hashlib
-import socket
-import logging
-from zeroconf.asyncio import AsyncServiceInfo, AsyncZeroconf
+from abc import ABC, abstractmethod
+from typing import Optional
 
-class BasicEntity:
+
+class BasicEntity(ABC):
+    """
+    A basic entity class that represents a generic entity in the system.
+
+    Attributes:
+        DOMAIN (str): The domain associated with this entity.
+        name (str): The name of the entity.
+        icon (Optional[str]): The icon associated with the entity.
+        device_class (Optional[str]): The class of the device.
+        entity_category (Optional[str]): The category of the entity.
+        device (Optional[Device]): The device this entity belongs to.
+        key (Optional[int]): A unique key assigned to this entity.
+    """
+
     DOMAIN = ""
 
     def __init__(
-            self,
-            name,
-            object_id=None,
-            unique_id=None,
-            icon=None,
-            device_class=None,
-            entity_category=None,
+        self,
+        name: str,
+        object_id: Optional[str] = None,
+        unique_id: Optional[str] = None,
+        icon: Optional[str] = None,
+        device_class: Optional[str] = None,
+        entity_category: Optional[str] = None,
     ):
+        """
+        Initialize a BasicEntity instance.
+
+        Args:
+            name (str): The name of the entity.
+            object_id (Optional[str]): The object ID of the entity.
+            unique_id (Optional[str]): The unique ID of the entity.
+            icon (Optional[str]): The icon associated with the entity.
+            device_class (Optional[str]): The class of the device.
+            entity_category (Optional[str]): The category of the entity.
+        """
         self.name = name
         self._assigned_object_id = object_id
         self._assigned_unique_id = unique_id
@@ -30,15 +69,33 @@ class BasicEntity:
 
         self._state = False
 
-    def set_device(self, device):
+    def set_device(self, device) -> None:
+        """
+        Set the device associated with this entity.
+
+        Args:
+            device (Device): The device to associate with this entity.
+        """
         self.device = device
 
-    def set_key(self, key):
+    def set_key(self, key: int) -> None:
+        """
+        Set the unique key for this entity.
+
+        Args:
+            key (int): The key to assign to this entity.
+        """
         self.key = key
 
     @property
-    def object_id(self):
-        if self._assigned_object_id != None:
+    def object_id(self) -> str:
+        """
+        Get the object ID of the entity.
+
+        Returns:
+            str: The object ID.
+        """
+        if self._assigned_object_id is not None:
             return self._assigned_object_id
         else:
             obj_id = self.name.lower()
@@ -48,8 +105,14 @@ class BasicEntity:
             return obj_id
 
     @property
-    def unique_id(self):
-        if self._assigned_unique_id != None:
+    def unique_id(self) -> str:
+        """
+        Get the unique ID of the entity.
+
+        Returns:
+            str: The unique ID.
+        """
+        if self._assigned_unique_id is not None:
             return self._assigned_unique_id
         else:
             m = hashlib.sha256()
@@ -62,72 +125,76 @@ class BasicEntity:
             return uid
 
     @property
-    def json_id(self):
+    def json_id(self) -> str:
+        """
+        Get the JSON ID of the entity, which combines the domain and object ID.
+
+        Returns:
+            str: The JSON ID.
+        """
         return f"{self.DOMAIN}-{self.object_id}"
 
-    async def build_list_entities_response(self):
+    @abstractmethod
+    async def build_list_entities_response(self) -> None:
+        """
+        Build the response for listing entities. This method must be overridden by subclasses.
+        """
         pass
 
-    async def build_state_response(self):
+    @abstractmethod
+    async def build_state_response(self) -> None:
+        """
+        Build the state response for this entity. This method must be overridden by subclasses.
+        """
         pass
 
-    async def state_json(self):
+    @abstractmethod
+    async def state_json(self) -> None:
+        """
+        Generate a JSON representation of the entity's state. This method must be overridden by subclasses.
+        """
         pass
 
-    async def can_handle(self, key, message):
+    async def can_handle(self, key: int, message: dict) -> bool:
+        """
+        Determine if the entity can handle a given message.
+
+        Args:
+            key (int): The key associated with the message.
+            message (dict): The message to handle.
+
+        Returns:
+            bool: True if the entity can handle the message, False otherwise.
+        """
         return True
 
-    async def handle(self, key, message):
+    @abstractmethod
+    async def handle(self, key: int, message: dict) -> None:
+        """
+        Handle a given message. This method must be overridden by subclasses.
+
+        Args:
+            key (int): The key associated with the message.
+            message (dict): The message to handle.
+        """
         pass
 
-    async def add_routes(self, router):
+    @abstractmethod
+    async def add_routes(self, router) -> None:
+        """
+        Add routes for this entity to a router. This method must be overridden by subclasses.
+
+        Args:
+            router: The router to which routes should be added.
+        """
         pass
 
-    async def notify_state_change(self):
+    async def notify_state_change(self) -> None:
+        """
+        Notify that the entity's state has changed.
+        """
         await self.device.publish(
             self,
             'state_change',
             await self.build_state_response()
         )
-    
-
-    async def register_zeroconf(self, port):
-        logging.info(f"Registering Zeroconf for {self.name} on port {port}")
-        try:
-            zeroconf = AsyncZeroconf()
-            hostname = socket.gethostname()
-            address = socket.gethostbyname(hostname)
-            service_info = AsyncServiceInfo(
-                type_="_esphomelib._tcp.local.",
-                name=f"{self.name}._esphomelib._tcp.local.",
-                addresses=[socket.inet_aton(address)],
-                port=port,
-                properties={
-                    "address": address,
-                    "port": str(port),
-                    "api_version": "1.5.0",
-                    "mac": self.mac_address,
-                    "manufacturer": self.manufacturer,
-                    "model": self.model,
-                    "name": self.name,
-                    "project_name": self.project_name,
-                    "project_version": self.project_version,
-                }
-            )
-            await zeroconf.async_register_service(service_info)
-            logging.info(f"Zeroconf registration successful for {self.name} on port {port}")
-            return zeroconf
-        except Exception as e:
-            logging.error(f"Error registering Zeroconf service for {self.name}: {e}")
-            logging.exception("Exception details:")
-            return None
-
-    async def unregister_zeroconf(self, zeroconf):
-        if zeroconf:
-            service_info = AsyncServiceInfo(
-                type_="_esphomelib._tcp.local.",
-                name=f"{self.device.name}._esphomelib._tcp.local."
-            )
-            await zeroconf.async_unregister_service(service_info)
-            await zeroconf.async_close()
-

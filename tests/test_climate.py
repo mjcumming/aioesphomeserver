@@ -83,7 +83,7 @@ async def main():
     climate_entity.preset = ClimatePreset.CLIMATE_PRESET_NONE
 
     logging.debug('Starting device...')
-    await device.run(api_port=6053, web_port=8081)
+    await device.run(api_port=6053, web_port=8080)
     await asyncio.gather(
         climate_entity.random_temperature(),
         climate_entity.random_mode(),
