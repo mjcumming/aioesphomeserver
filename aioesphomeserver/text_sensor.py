@@ -10,8 +10,8 @@ Classes:
 
 from __future__ import annotations
 from typing import Optional
-from aiohttp import web
 import json
+from aiohttp import web
 from . import BasicEntity, ListEntitiesTextSensorResponse, TextSensorStateResponse
 
 class TextSensorEntity(BasicEntity):

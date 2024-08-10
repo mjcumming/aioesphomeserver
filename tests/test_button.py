@@ -7,7 +7,7 @@ import logging
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from aioesphomeserver import Device, ButtonEntity
+from aioesphomeserver import Device, ButtonEntity, ButtonCommandRequest
 
 logging.basicConfig(level=logging.INFO)
 

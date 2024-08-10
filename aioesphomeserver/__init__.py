@@ -14,9 +14,10 @@ from .sensor import *
 from .climate import *
 from .number import *
 from .fan import *
-from .text_sensor import *
 from .select import *
 from .siren import *
 from .lock import *
 from .button import *
 from .media_player import *
+from .text_sensor import *
+

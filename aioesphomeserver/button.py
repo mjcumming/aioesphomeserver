@@ -7,6 +7,7 @@ and entity registration within a system.
 
 import json
 from urllib import parse
+import logging
 from typing import Optional 
 from aiohttp import web
 from . import BasicEntity, ListEntitiesButtonResponse, ButtonCommandRequest
