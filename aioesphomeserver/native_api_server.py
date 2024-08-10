@@ -15,19 +15,18 @@ Functions:
 from __future__ import annotations
 
 import asyncio
-import logging
 from aiohttp import web
 
 from .basic_entity import BasicEntity
-from . import (  # type: ignore
+from . import ( # pylint: disable=unused-import
     ConnectRequest,
     ConnectResponse,
     DeviceInfoRequest,
     DeviceInfoResponse,
     DisconnectRequest,
     DisconnectResponse,
-    GetTimeRequest,
-    GetTimeResponse,
+    GetTimeRequest, 
+    GetTimeResponse, 
     HelloRequest,
     HelloResponse,
     ListEntitiesDoneResponse,
@@ -107,24 +106,24 @@ class NativeApiConnection:
         else:
             await self.server.handle_client_request(self, msg)
 
-    async def handle_hello(self, msg: HelloRequest) -> None:
+    async def handle_hello(self, msg: HelloRequest) -> None: # pylint: disable=unused-argument # type: ignore
         """Handle a HelloRequest message."""
         resp = HelloResponse(api_version_major=1, api_version_minor=10)
         await self.write_message(resp)
 
-    async def handle_connect(self, msg: ConnectRequest) -> None:
+    async def handle_connect(self, msg: ConnectRequest) -> None: # pylint: disable=unused-argument # type: ignore
         """Handle a ConnectRequest message."""
         resp = ConnectResponse()
         await self.write_message(resp)
 
-    async def handle_disconnect(self, msg: DisconnectRequest) -> None:
+    async def handle_disconnect(self, msg: DisconnectRequest) -> None: # pylint: disable=unused-argument # type: ignore
         """Handle a DisconnectRequest message."""
         resp = DisconnectResponse()
         await self.write_message(resp)
         self.writer.close()
         await self.writer.wait_closed()
 
-    async def handle_subscribe_logs(self, msg: SubscribeLogsRequest) -> None:
+    async def handle_subscribe_logs(self, msg: SubscribeLogsRequest) -> None: # pylint: disable=unused-argument # type: ignore
         """Handle a SubscribeLogsRequest message."""
         self.subscribe_to_logs = True
 
@@ -134,13 +133,13 @@ class NativeApiConnection:
 
         await self.write_message(resp)
 
-    async def handle_subscribe_states(self, msg: SubscribeStatesRequest) -> None:
+    async def handle_subscribe_states(self, msg: SubscribeStatesRequest) -> None: # pylint: disable=unused-argument # type: ignore
         """Handle a SubscribeStatesRequest message."""
         self.subscribe_to_states = True
         await self.server.log("Subscribed to states")
         await self.server.send_all_states(self)
 
-    async def handle_ping(self, msg: PingRequest) -> None:
+    async def handle_ping(self, msg: PingRequest) -> None: # pylint: disable=unused-argument # type: ignore
         """Handle a PingRequest message."""
         resp = PingResponse()
         await self.write_message(resp)
@@ -159,7 +158,7 @@ class NativeApiConnection:
 
     async def read_next_message(self):
         """Read the next message from the client."""
-        preamble = await self._read_varuint()
+        preamble = await self._read_varuint() # pylint: disable=unused-variable
         length = await self._read_varuint()
         message_type = await self._read_varuint()
 
@@ -285,7 +284,7 @@ class NativeApiServer(BasicEntity):
         else:
             await self.device.publish(self, 'client_request', message)
 
-    async def handle_list_entities(self, client: NativeApiConnection, message: ListEntitiesRequest) -> None:
+    async def handle_list_entities(self, client: NativeApiConnection, message: ListEntitiesRequest) -> None: # pylint: disable=unused-argument # type: ignore
         """
         Handle a ListEntitiesRequest message.
 
@@ -373,7 +372,7 @@ class NativeApiServer(BasicEntity):
         """
         router.add_route("GET", f"/server/{self.object_id}", self.route_get_state)
 
-    async def route_get_state(self, request) -> web.Response:
+    async def route_get_state(self, request) -> web.Response: # pylint: disable=unused-argument
         """
         Handle GET requests to retrieve the server's state.
 

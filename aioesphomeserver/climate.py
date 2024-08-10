@@ -81,7 +81,7 @@ class ClimateEntity(BasicEntity):
         self.action = kwargs.get('action', ClimateAction.CLIMATE_ACTION_OFF)
         self.preset = kwargs.get('preset', ClimatePreset.CLIMATE_PRESET_NONE)
 
-    async def build_list_entities_response(self) -> ListEntitiesClimateResponse:
+    async def build_list_entities_response(self) -> ListEntitiesClimateResponse: # type: ignore
         """
         Build and return the response for listing this climate entity.
 
@@ -219,7 +219,7 @@ class ClimateEntity(BasicEntity):
         router.add_route("POST", f"/climate/{self.object_id}/set_swing_mode", self.route_set_swing_mode)
         router.add_route("POST", f"/climate/{self.object_id}/set_preset", self.route_set_preset)
 
-    async def route_get_state(self, request: web.Request) -> web.Response:
+    async def route_get_state(self, request: web.Request) -> web.Response: # pylint: disable=unused-argument
         """
         Handle a request to get the current state of the climate entity.
 

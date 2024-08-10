@@ -139,23 +139,20 @@ class BasicEntity(ABC):
         """
         Build the response for listing entities. This method must be overridden by subclasses.
         """
-        pass
 
     @abstractmethod
     async def build_state_response(self) -> None:
         """
         Build the state response for this entity. This method must be overridden by subclasses.
         """
-        pass
 
     @abstractmethod
     async def state_json(self) -> None:
         """
         Generate a JSON representation of the entity's state. This method must be overridden by subclasses.
         """
-        pass
 
-    async def can_handle(self, key: int, message: dict) -> bool:
+    async def can_handle(self, key: int, message: dict) -> bool: # pylint: disable=unused-argument
         """
         Determine if the entity can handle a given message.
 
@@ -177,7 +174,6 @@ class BasicEntity(ABC):
             key (int): The key associated with the message.
             message (dict): The message to handle.
         """
-        pass
 
     @abstractmethod
     async def add_routes(self, router) -> None:
@@ -187,7 +183,6 @@ class BasicEntity(ABC):
         Args:
             router: The router to which routes should be added.
         """
-        pass
 
     async def notify_state_change(self) -> None:
         """
@@ -198,3 +193,15 @@ class BasicEntity(ABC):
             'state_change',
             await self.build_state_response()
         )
+
+    async def log(self, level, tag, message, *args):
+        """
+        Log a message using the device's logging function.
+
+        Args:
+            level (int): The log level (e.g., logging.INFO, logging.ERROR).
+            tag (str): A tag for categorizing the log message.
+            message (str): The message to log.
+            *args: Additional arguments for formatting the message.
+        """
+        await self.device.log(level, f"{self.DOMAIN}.{tag}", message, *args)

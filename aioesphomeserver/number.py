@@ -52,7 +52,7 @@ class NumberEntity(BasicEntity):
         max_value: float = None,
         step: float = None,
         unit_of_measurement: str = None,
-        mode: NumberMode = NumberMode.NUMBER_MODE_AUTO,
+        mode: NumberMode = NumberMode.NUMBER_MODE_AUTO, # type: ignore
         **kwargs,
     ):
         """
@@ -164,7 +164,7 @@ class NumberEntity(BasicEntity):
         router.add_route("GET", f"/number/{self.object_id}", self.route_get_state)
         router.add_route("POST", f"/number/{self.object_id}/set", self.route_set_state)
 
-    async def route_get_state(self, request) -> web.Response:
+    async def route_get_state(self, request) -> web.Response: # pylint: disable=unused-argument
         """
         Handle GET requests to retrieve the current state of the number entity.
 

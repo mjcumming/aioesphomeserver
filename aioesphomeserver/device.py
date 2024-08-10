@@ -87,9 +87,7 @@ class Device:
         Returns:
             str: A randomly generated MAC address.
         """
-        return "02:00:00:%02x:%02x:%02x" % (random.randint(0, 255),
-                                            random.randint(0, 255),
-                                            random.randint(0, 255))
+        return f"02:00:00:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}:{random.randint(0, 255):02x}"  # pylint: disable=C0209
 
     def _get_ip_address(self):
         """
@@ -136,7 +134,7 @@ class Device:
         formatted_log = format_log(level, tag, caller.lineno, message % args)
 
         # Use Python's logging module to log the formatted message
-        logging.log(level, "%s - %s: %s" % (self.name, tag, formatted_log))
+        logging.log(level, "%s - %s: %s", self.name, tag, formatted_log)
 
     async def publish(self, publisher, key, message):
         """
@@ -270,9 +268,10 @@ class Device:
             self.service_info = service_info
             self.zeroconf = zeroconf
 
-            # Synchronous logging in the thread context
             logging.info("Zeroconf service registered: %s on port %s", service_name, port)
-        except Exception as e:
+        except OSError as e:
+            logging.error("Network-related error occurred: %s", e)
+        except Exception as e: # pylint: disable=broad-except
             logging.error("Failed to register Zeroconf service: %s", e)
 
     def unregister_zeroconf(self):

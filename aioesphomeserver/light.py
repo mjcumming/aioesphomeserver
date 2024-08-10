@@ -246,7 +246,7 @@ class LightEntity(BasicEntity):
 
         await self.set_state_from_command(cmd)
 
-    async def handle(self, key: int, message: LightCommandRequest) -> None:
+    async def handle(self, key: int, message: LightCommandRequest) -> None: # type: ignore
         """
         Handle incoming commands to change the state of the light.
 
@@ -268,7 +268,7 @@ class LightEntity(BasicEntity):
         router.add_route("POST", f"/light/{self.object_id}/turn_on", self.route_turn_on)
         router.add_route("POST", f"/light/{self.object_id}/turn_off", self.route_turn_off)
 
-    async def route_get_state(self, request: web.Request) -> web.Response:
+    async def route_get_state(self, request: web.Request) -> web.Response: # pylint: disable=unused-argument
         """
         Handle a request to get the current state of the light.
 

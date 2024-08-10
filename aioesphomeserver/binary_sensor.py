@@ -39,7 +39,7 @@ class BinarySensorEntity(BasicEntity):
         super().__init__(*args, **kwargs)
         self._state = False
 
-    async def build_list_entities_response(self) -> ListEntitiesBinarySensorResponse:
+    async def build_list_entities_response(self) -> ListEntitiesBinarySensorResponse: # type: ignore
         """
         Build and return the response for listing this binary sensor entity.
 
@@ -56,7 +56,7 @@ class BinarySensorEntity(BasicEntity):
             entity_category=self.entity_category,
         )
 
-    async def build_state_response(self) -> BinarySensorStateResponse:
+    async def build_state_response(self) -> BinarySensorStateResponse: # type: ignore
         """
         Build and return the state response for this binary sensor entity.
 

@@ -23,7 +23,7 @@ class TestClimateEntity(ClimateEntity):
         self.swing_mode = ClimateSwingMode.CLIMATE_SWING_OFF
         self.action = ClimateAction.CLIMATE_ACTION_OFF
         self.preset = ClimatePreset.CLIMATE_PRESET_NONE
-        logging.debug(f'Initialized TestClimateEntity with mode {self.mode}, min_temp {self.visual_min_temperature}, max_temp {self.visual_max_temperature}')
+        logging.debug('Initialized TestClimateEntity with mode %s, min_temp %s, max_temp %s', self.mode, self.visual_min_temperature, self.visual_max_temperature)
 
     async def random_temperature(self):
         while True:

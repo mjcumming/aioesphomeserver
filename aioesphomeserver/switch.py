@@ -48,7 +48,7 @@ class SwitchEntity(BasicEntity):
         self.assumed_state = assumed_state
         self._state = False
 
-    async def build_list_entities_response(self) -> ListEntitiesSwitchResponse:
+    async def build_list_entities_response(self) -> ListEntitiesSwitchResponse: # type: ignore
         """
         Build and return the response for listing this switch entity.
 
@@ -66,7 +66,7 @@ class SwitchEntity(BasicEntity):
             assumed_state=self.assumed_state,
         )
 
-    async def build_state_response(self) -> SwitchStateResponse:
+    async def build_state_response(self) -> SwitchStateResponse: # type: ignore
         """
         Build and return the state response for this switch entity.
 
@@ -129,7 +129,7 @@ class SwitchEntity(BasicEntity):
         router.add_route("POST", f"/switch/{self.object_id}/turn_on", self.route_turn_on)
         router.add_route("POST", f"/switch/{self.object_id}/turn_off", self.route_turn_off)
 
-    async def route_get_state(self, request: web.Request) -> web.Response:
+    async def route_get_state(self, request: web.Request) -> web.Response: # pylint: disable=unused-argument 
         """
         Handle a request to get the current state of the switch.
 
@@ -142,7 +142,7 @@ class SwitchEntity(BasicEntity):
         data = await self.state_json()
         return web.Response(text=data)
 
-    async def route_turn_off(self, request: web.Request) -> web.Response:
+    async def route_turn_off(self, request: web.Request) -> web.Response: # pylint: disable=unused-argument
         """
         Handle a request to turn off the switch.
 
@@ -156,7 +156,7 @@ class SwitchEntity(BasicEntity):
         data = await self.state_json()
         return web.Response(text=data)
 
-    async def route_turn_on(self, request: web.Request) -> web.Response:
+    async def route_turn_on(self, request: web.Request) -> web.Response: # pylint: disable=unused-argument # type: ignore
         """
         Handle a request to turn on the switch.
 
@@ -170,7 +170,7 @@ class SwitchEntity(BasicEntity):
         data = await self.state_json()
         return web.Response(text=data)
 
-    async def handle(self, key: int, message: SwitchCommandRequest) -> None:
+    async def handle(self, key: int, message: SwitchCommandRequest) -> None: # type: ignore
         """
         Handle incoming commands to change the state of the switch.
 
