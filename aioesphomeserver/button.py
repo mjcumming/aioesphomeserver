@@ -6,7 +6,6 @@ and entity registration within a system.
 # button.py
 
 import json
-from urllib import parse
 import logging
 from typing import Optional 
 from aiohttp import web
@@ -56,7 +55,7 @@ class ButtonEntity(BasicEntity):
     async def add_routes(self, router: web.UrlDispatcher) -> None:
         router.add_route("POST", f"/button/{self.object_id}/press", self.route_press)
 
-    async def route_press(self, request: web.Request) -> web.Response:
+    async def route_press(self, request: web.Request) -> web.Response: # pylint: disable=unused-argument
         command_request = ButtonCommandRequest(key=self.key)
         await self.handle(self.key, command_request)
         data = await self.state_json()

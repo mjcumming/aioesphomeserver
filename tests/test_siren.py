@@ -29,7 +29,7 @@ class TestSirenEntity(SirenEntity):
             await asyncio.sleep(5)
 
 async def run_device(name, api_port, web_port):
-    logging.info(f"Setting up {name} with API port {api_port} and Web port {web_port}")
+    logging.info("Setting up %s with API port %s and Web port %s", name, api_port, web_port)
 
     mac_address = f"AC:BC:32:89:0E:{api_port:02x}"
 

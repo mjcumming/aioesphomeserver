@@ -25,39 +25,21 @@ class RandomRGBLight(LightEntity):
             green = random.uniform(0, 1)  # Random green channel value
             blue = random.uniform(0, 1)  # Random blue channel value
 
-            logging.info(f"Setting light {self.name} RGB to (R: {red*255:.0f}, G: {green*255:.0f}, B: {blue*255:.0f}) with brightness {brightness * 100:.2f}%")
-
-            command = LightCommandRequest(
-                key=self.key,
-                has_state=True,
-                state=True,
-                has_brightness=True,
-                brightness=brightness,
-                has_rgb=True,
-                red=red,
-                green=green,
-                blue=blue,
-                has_color_mode=True,
-                color_mode=LightColorCapability.RGB  # Set color mode to RGB
-            )
+            logging.info("Setting light %s RGB to (R: %.0f, G: %.0f, B: %.0f) with brightness %.2f%%", self.name, red*255, green*255, blue*255, brightness * 100)
             await self.set_state_from_command(command)
             await asyncio.sleep(5)
 
     async def handle(self, key, message):
         if isinstance(message, LightCommandRequest):
             if message.key == self.key:
-                logging.info(f"Received command for {self.name}: {message}")
+                logging.info("Received command for %s: %s", self.name, message)
                 await self.set_state_from_command(message)
 
 async def run_device(name, api_port, web_port):
-    logging.info(f"Setting up {name} with API port {api_port} and Web port {web_port}")
-
-    mac_address = f"AC:BC:32:89:0E:{api_port:02x}"
-
     device = Device(
         name=name,
-        mac_address=mac_address,
-        model="Test Light",
+        mac_address=f"AC:BC:32:89:0E:{api_port:02x}",
+        model="Test Dimmer",
         project_name="aioesphomeserver",
         project_version="1.0.0",
         network="wifi",
@@ -65,24 +47,51 @@ async def run_device(name, api_port, web_port):
         platform="ESP8266"
     )
 
-    # Add a LightEntity configured as an RGB light with random changes
-    rgb_light = RandomRGBLight(name=f"{name} RGB Light")
-    device.add_entity(rgb_light)
+    await device.log(logging.INFO, "setup", f"Setting up {name} with API port {api_port} and Web port {web_port}")
 
-    # Run the random RGB light functionality
-    asyncio.create_task(rgb_light.random_rgb_light())
+    # Add a LightEntity configured as a dimmer with random changes
+    dimmer = RandomRGBLight(name=f"{name} Dimmer")
+    device.add_entity(dimmer)
+
+    # Run the random dimmer functionality
+    dimmer_task = asyncio.create_task(dimmer.random_dimmer())
 
     try:
         # Run the device
         await device.run(api_port, web_port)
+    except asyncio.CancelledError:
+        await device.log(logging.INFO, "shutdown", "Shutting down device")
     finally:
+        dimmer.stop()
+        await dimmer_task
         await device.unregister_zeroconf()
 
 async def main():
     # Define a single device
-    name, api_port, web_port = "Test Device", 6053, 8080
+    name, api_port, web_port = "Test Light RGB", 6053, 8080
     await run_device(name, api_port, web_port)
 
+async def shutdown(event_loop, signal=None):
+    if signal:
+        logging.info("Received exit signal %s...", signal.name)
+    tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
+    cancel_tasks = [task.cancel() for task in tasks]
+    await asyncio.gather(*cancel_tasks, return_exceptions=True)
+    event_loop.stop()
+
 if __name__ == "__main__":
+    # Set up basic logging configuration
+    logging.basicConfig(level=logging.INFO)
+    
+    # Log the start of the main event loop using standard logging
     logging.info("Starting main event loop")
-    asyncio.run(main())
+    
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(main())
+    except KeyboardInterrupt:
+        logging.info("Received keyboard interrupt. Shutting down...")
+    finally:
+        loop.run_until_complete(shutdown(loop))
+        loop.close()
+        logging.info("Shutdown complete.")

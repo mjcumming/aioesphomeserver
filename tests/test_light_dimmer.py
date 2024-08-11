@@ -41,7 +41,7 @@ async def run_device(name, api_port, web_port):
     device = Device(
         name=name,
         mac_address=f"AC:BC:32:89:0E:{api_port:02x}",
-        model="Test Device",
+        model="Test Dimmer",
         project_name="aioesphomeserver",
         project_version="1.0.0",
         network="wifi",
@@ -75,10 +75,10 @@ async def main():
 
 async def shutdown(loop, signal=None):
     if signal:
-        logging.info(f"Received exit signal {signal.name}...")
+        logging.info("Received exit signal %s...", signal.name)
     tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
-    [task.cancel() for task in tasks]
-    await asyncio.gather(*tasks, return_exceptions=True)
+    cancel_tasks = [task.cancel() for task in tasks]
+    await asyncio.gather(*cancel_tasks, return_exceptions=True)
     loop.stop()
 
 if __name__ == "__main__":

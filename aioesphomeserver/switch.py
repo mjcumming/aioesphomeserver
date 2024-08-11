@@ -129,7 +129,7 @@ class SwitchEntity(BasicEntity):
         router.add_route("POST", f"/switch/{self.object_id}/turn_on", self.route_turn_on)
         router.add_route("POST", f"/switch/{self.object_id}/turn_off", self.route_turn_off)
 
-    async def route_get_state(self, request: web.Request) -> web.Response: # pylint: disable=unused-argument 
+    async def route_get_state(self, request: web.Request) -> web.Response: # pylint: disable=unused-argument
         """
         Handle a request to get the current state of the switch.
 

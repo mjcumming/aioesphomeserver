@@ -6,7 +6,6 @@ and entity registration within a system.
 # media_player.py
 
 import json
-from urllib import parse
 from aiohttp import web
 from . import BasicEntity, ListEntitiesMediaPlayerResponse, MediaPlayerStateResponse, MediaPlayerCommandRequest, MediaPlayerState, MediaPlayerCommand
 
@@ -59,7 +58,7 @@ class MediaPlayerEntity(BasicEntity):
         }
         return json.dumps(data)
 
-    async def set_state(self, state: MediaPlayerState) -> None:
+    async def set_state(self, state: MediaPlayerState) -> None: # type: ignore
         self.state = state
         await self.notify_state_change()
 
@@ -85,6 +84,6 @@ class MediaPlayerEntity(BasicEntity):
     async def add_routes(self, router: web.UrlDispatcher) -> None:
         router.add_route("GET", f"/media_player/{self.object_id}", self.route_get_state)
 
-    async def route_get_state(self, request: web.Request) -> web.Response:
+    async def route_get_state(self, request: web.Request) -> web.Response: # pylint: disable=unused-argument
         data = await self.state_json()
         return web.Response(text=data)

@@ -13,7 +13,7 @@ Functions:
 """
 
 from __future__ import annotations
-
+import logging
 import asyncio
 from aiohttp import web
 
@@ -89,7 +89,7 @@ class NativeApiConnection:
         if msg is None:
             return
 
-        await self.server.log(f"{type(msg)}: {msg}")
+        await self.server.broadcast_log_to_clients(f"{type(msg)}: {msg}")
 
         if isinstance(msg, HelloRequest):
             await self.handle_hello(msg)
@@ -136,7 +136,7 @@ class NativeApiConnection:
     async def handle_subscribe_states(self, msg: SubscribeStatesRequest) -> None: # pylint: disable=unused-argument # type: ignore
         """Handle a SubscribeStatesRequest message."""
         self.subscribe_to_states = True
-        await self.server.log("Subscribed to states")
+        await self.server.log(logging.INFO, "state_subscription", "Subscribed to states")
         await self.server.send_all_states(self)
 
     async def handle_ping(self, msg: PingRequest) -> None: # pylint: disable=unused-argument # type: ignore
@@ -241,9 +241,9 @@ class NativeApiServer(BasicEntity):
             while True:
                 await asyncio.sleep(3600)
 
-    async def log(self, message: str) -> None:
+    async def broadcast_log_to_clients(self, message: str) -> None:
         """
-        Log a message to all connected clients that are subscribed to logs.
+        Broadcast a log message to all connected clients that are subscribed to logs.
 
         Args:
             message (str): The message to log.

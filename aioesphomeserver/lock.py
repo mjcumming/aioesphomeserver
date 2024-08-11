@@ -5,7 +5,6 @@ and entity registration within a system.
 """
 
 import json
-from urllib import parse
 from typing import Optional 
 from aiohttp import web
 from . import BasicEntity, ListEntitiesLockResponse, LockStateResponse, LockCommandRequest, LockState, LockCommand
@@ -61,7 +60,7 @@ class LockEntity(BasicEntity):
         }
         return json.dumps(data)
 
-    async def set_state(self, state: LockState) -> None:
+    async def set_state(self, state: LockState) -> None: # type: ignore
         self.state = state
         await self.notify_state_change()
 
@@ -77,6 +76,6 @@ class LockEntity(BasicEntity):
     async def add_routes(self, router: web.UrlDispatcher) -> None:
         router.add_route("GET", f"/lock/{self.object_id}", self.route_get_state)
 
-    async def route_get_state(self, request: web.Request) -> web.Response:
+    async def route_get_state(self, request: web.Request) -> web.Response: # pylint: disable=unused-argument
         data = await self.state_json()
         return web.Response(text=data)
