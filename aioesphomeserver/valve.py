@@ -5,7 +5,6 @@ and entity registration within a system.
 """
 
 import json
-from typing import Optional
 from aiohttp import web
 from . import BasicEntity, ListEntitiesValveResponse, ValveStateResponse, ValveCommandRequest, ValveOperation
 
@@ -22,7 +21,7 @@ class ValveEntity(BasicEntity):
         supports_position: bool = False,
         supports_stop: bool = False,
         position: float = 0.0,
-        current_operation: ValveOperation = ValveOperation.VALVE_OPERATION_IDLE,
+        current_operation: ValveOperation = ValveOperation.VALVE_OPERATION_IDLE, # type: ignore
         **kwargs
     ):
         """
@@ -93,7 +92,7 @@ class ValveEntity(BasicEntity):
         }
         return json.dumps(data)
 
-    async def set_valve_state(self, position: float, operation: ValveOperation) -> None:
+    async def set_valve_state(self, position: float, operation: ValveOperation) -> None: # type: ignore
         """
         Set the state of the valve entity.
 

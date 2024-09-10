@@ -5,7 +5,6 @@ and entity registration within a system.
 """
 
 import json
-from typing import Optional
 from aiohttp import web
 from . import BasicEntity, ListEntitiesTimeResponse, TimeStateResponse, TimeCommandRequest
 

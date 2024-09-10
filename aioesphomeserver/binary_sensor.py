@@ -1,10 +1,12 @@
 """
-This module defines the BinarySensorEntity class, which represents a binary sensor entity in the system.
+This module defines the BinarySensorEntity class, 
+which represents a binary sensor entity in the system.
 The BinarySensorEntity class handles state management, interaction with external requests,
 and entity registration within a system.
 
 Classes:
-    - BinarySensorEntity: A class representing a binary sensor entity capable of managing and reporting its state.
+    - BinarySensorEntity: A class representing a binary sensor entity capable of managing 
+    and reporting its state.
 """
 
 from __future__ import annotations

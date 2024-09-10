@@ -8,8 +8,6 @@ Classes:
       including speed, direction, oscillation, and preset modes.
 """
 
-# fan.py
-
 from __future__ import annotations
 import json
 from urllib import parse

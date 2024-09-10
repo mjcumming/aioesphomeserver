@@ -1,3 +1,32 @@
+"""
+This module initializes the aioesphomeapi package by importing all necessary submodules.
+
+The following submodules are imported:
+- basic_entity
+- binary_sensor
+- button
+- climate
+- cover
+- device
+- fan
+- light
+- lock
+- media_player
+- native_api_server
+- number
+- select
+- sensor
+- siren
+- switch
+- text
+- text_sensor
+- time
+- valve
+- web_server
+
+Additionally, it imports MESSAGE_TYPE_TO_PROTO from aioesphomeapi.core 
+and all definitions from aioesphomeapi.api_pb2.
+"""
 from aioesphomeapi.api_pb2 import *
 from aioesphomeapi.core import (
     MESSAGE_TYPE_TO_PROTO,

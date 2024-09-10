@@ -5,7 +5,6 @@ and entity registration within a system.
 """
 
 import json
-from typing import Optional
 from aiohttp import web
 from . import BasicEntity, ListEntitiesCoverResponse, CoverStateResponse, CoverCommandRequest, CoverOperation, LegacyCoverState
 
@@ -23,10 +22,10 @@ class CoverEntity(BasicEntity):
         supports_position: bool = False,
         supports_tilt: bool = False,
         supports_stop: bool = False,
-        legacy_state: LegacyCoverState = LegacyCoverState.LEGACY_COVER_STATE_CLOSED,
+        legacy_state: LegacyCoverState = LegacyCoverState.LEGACY_COVER_STATE_CLOSED, # type: ignore
         position: float = 0.0,
         tilt: float = 0.0,
-        current_operation: CoverOperation = CoverOperation.COVER_OPERATION_IDLE,
+        current_operation: CoverOperation = CoverOperation.COVER_OPERATION_IDLE, # type: ignore
         **kwargs
     ):
         super().__init__(*args, **kwargs)
@@ -95,7 +94,7 @@ class CoverEntity(BasicEntity):
         }
         return json.dumps(data)
 
-    async def set_cover_state(self, position: float, tilt: float, operation: CoverOperation) -> None:
+    async def set_cover_state(self, position: float, tilt: float, operation: CoverOperation) -> None: # type: ignore
         """
         Set the state of the cover entity.
 
