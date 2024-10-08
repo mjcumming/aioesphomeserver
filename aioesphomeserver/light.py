@@ -9,13 +9,17 @@ Classes:
 """
 
 from __future__ import annotations
-from urllib import parse
+
 import json
-from aiohttp import web
-from typing import Optional, List
+from typing import List, Optional
+from urllib import parse
 
 from aioesphomeapi import LightColorCapability
-from . import BasicEntity, ListEntitiesLightResponse, LightStateResponse, LightCommandRequest
+from aiohttp import web
+
+from . import (BasicEntity, LightCommandRequest, LightStateResponse,
+               ListEntitiesLightResponse)
+
 
 class LightEntity(BasicEntity):
     """

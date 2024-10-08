@@ -22,7 +22,7 @@ class TextEntity(BasicEntity):
         min_length: int = 0,
         max_length: int = 255,
         pattern: Optional[str] = None,
-        mode: TextMode = TextMode.TEXT, # type: ignore
+        mode: TextMode = TextMode.TEXT_MODE_TEXT, 
         **kwargs
     ):
         """

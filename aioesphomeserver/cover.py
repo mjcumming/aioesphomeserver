@@ -106,6 +106,7 @@ class CoverEntity(BasicEntity):
         self.position = position
         self.tilt = tilt
         self.current_operation = operation
+        self.legacy_state = LegacyCoverState.LEGACY_COVER_STATE_OPEN if position > 0 else LegacyCoverState.LEGACY_COVER_STATE_CLOSED
         await self.notify_state_change()
 
     async def handle(self, key: int, message: CoverCommandRequest) -> None: # type: ignore
@@ -119,12 +120,22 @@ class CoverEntity(BasicEntity):
         await self.log(level=2, tag="cover", message=f"Handling CoverCommandRequest for {self.name}: {message}")
 
         if isinstance(message, CoverCommandRequest) and message.key == self.key:
+            new_position = self.position
+            new_tilt = self.tilt
+            new_operation = self.current_operation
+
             if message.has_position:
-                await self.set_cover_state(position=message.position, tilt=self.tilt, operation=CoverOperation.COVER_OPERATION_IS_OPENING)
-            elif message.has_tilt:
-                await self.set_cover_state(position=self.position, tilt=message.tilt, operation=CoverOperation.COVER_OPERATION_IS_OPENING)
-            elif message.stop:
-                await self.set_cover_state(position=self.position, tilt=self.tilt, operation=CoverOperation.COVER_OPERATION_IDLE)
+                new_position = message.position
+                new_operation = CoverOperation.COVER_OPERATION_IS_OPENING if message.position > self.position else CoverOperation.COVER_OPERATION_IS_CLOSING
+            
+            if message.has_tilt:
+                new_tilt = message.tilt
+                new_operation = CoverOperation.COVER_OPERATION_IS_OPENING if message.tilt > self.tilt else CoverOperation.COVER_OPERATION_IS_CLOSING
+
+            if message.stop:
+                new_operation = CoverOperation.COVER_OPERATION_IDLE
+
+            await self.set_cover_state(new_position, new_tilt, new_operation)
             await self.log(level=2, tag="cover", message=f"Cover state set for {self.name}")
 
     async def add_routes(self, router: web.UrlDispatcher) -> None:

@@ -75,11 +75,17 @@ class ClimateEntity(BasicEntity):
         # Initialize default values if they are not provided
         self.mode = kwargs.get('mode', ClimateMode.CLIMATE_MODE_OFF)
         self.target_temperature = kwargs.get('target_temperature', self.visual_min_temperature)
+        self.target_temperature_low = kwargs.get('target_temperature_low', self.visual_min_temperature)
+        self.target_temperature_high = kwargs.get('target_temperature_high', self.visual_max_temperature)
         self.current_temperature = kwargs.get('current_temperature', self.visual_min_temperature)
         self.fan_mode = kwargs.get('fan_mode', ClimateFanMode.CLIMATE_FAN_OFF)
         self.swing_mode = kwargs.get('swing_mode', ClimateSwingMode.CLIMATE_SWING_OFF)
         self.action = kwargs.get('action', ClimateAction.CLIMATE_ACTION_OFF)
         self.preset = kwargs.get('preset', ClimatePreset.CLIMATE_PRESET_NONE)
+        self.custom_fan_mode = kwargs.get('custom_fan_mode', "")
+        self.custom_preset = kwargs.get('custom_preset', "")
+        self.current_humidity = kwargs.get('current_humidity', 0.0)
+        self.target_humidity = kwargs.get('target_humidity', 0.0)
 
     async def build_list_entities_response(self) -> ListEntitiesClimateResponse: # type: ignore
         """
@@ -100,23 +106,24 @@ class ClimateEntity(BasicEntity):
         )
 
     async def build_state_response(self) -> ClimateStateResponse: # type: ignore
-        """
-        Build and return the state response for this climate entity.
-
-        Returns:
-            ClimateStateResponse: The response containing the climate's current state.
-        """
         return ClimateStateResponse(
             key=self.key,
             mode=self.mode,
-            target_temperature=self.target_temperature,
             current_temperature=self.current_temperature,
+            target_temperature=self.target_temperature,
+            target_temperature_low=self.target_temperature_low,
+            target_temperature_high=self.target_temperature_high,
+            legacy_away=self.preset == ClimatePreset.CLIMATE_PRESET_AWAY,
+            action=self.action,
             fan_mode=self.fan_mode,
             swing_mode=self.swing_mode,
-            action=self.action,
+            custom_fan_mode=self.custom_fan_mode,
             preset=self.preset,
+            custom_preset=self.custom_preset,
+            current_humidity=self.current_humidity,
+            target_humidity=self.target_humidity
         )
-
+    
     async def state_json(self) -> str:
         """
         Generate a JSON representation of the climate's state.
@@ -150,8 +157,14 @@ class ClimateEntity(BasicEntity):
         if command.has_target_temperature:
             self.target_temperature = command.target_temperature
             changed = True
-        if command.has_current_temperature:
-            self.current_temperature = command.current_temperature
+        if command.has_target_temperature_low:
+            self.target_temperature_low = command.target_temperature_low
+            changed = True
+        if command.has_target_temperature_high:
+            self.target_temperature_high = command.target_temperature_high
+            changed = True
+        if command.has_legacy_away:
+            self.preset = ClimatePreset.CLIMATE_PRESET_AWAY if command.legacy_away else ClimatePreset.CLIMATE_PRESET_NONE
             changed = True
         if command.has_fan_mode:
             self.fan_mode = command.fan_mode
@@ -159,11 +172,17 @@ class ClimateEntity(BasicEntity):
         if command.has_swing_mode:
             self.swing_mode = command.swing_mode
             changed = True
-        if command.has_action:
-            self.action = command.action
+        if command.has_custom_fan_mode:
+            self.custom_fan_mode = command.custom_fan_mode
             changed = True
         if command.has_preset:
             self.preset = command.preset
+            changed = True
+        if command.has_custom_preset:
+            self.custom_preset = command.custom_preset
+            changed = True
+        if command.has_target_humidity:
+            self.target_humidity = command.target_humidity
             changed = True
 
         if changed:
